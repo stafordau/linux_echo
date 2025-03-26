@@ -30,32 +30,40 @@ print("Client is accepted")  # пункт 2.iii выполнен
 print("Client address:", addr[0])  # Выводим IP-адрес клиента
 print("Client port:", addr[1])     # Выводим порт клиента
 
+# Инициализируем переменную msg для накопления полученных данных
+msg = ''
+
 # Основной цикл работы с клиентом
 while True:
     # Получаем данные от клиента
-    # Метод recv() считывает данные из сокета в виде байтов
-    # Параметр 1024 определяет максимальное количество байт для чтения за один раз
     data = conn.recv(1024)
     if not data:
         # Если метод recv() вернул пустые данные, это означает, что клиент закрыл соединение
-        print("Client has closed the connection")
+        print("All data is accepted")  # пункт 2.iv выполнен
         break
-    # Декодируем полученные байты в строку с использованием стандартной кодировки UTF-8
-    decoded_data = data.decode('utf-8')
-    print(f"Received from client: {decoded_data}")  # Выводим полученное сообщение
-    if decoded_data.lower() == 'exit':
-        # Если клиент отправил строку 'exit', завершаем работу с клиентом
-        print("Exit command received. Closing connection.")
-        # Отправляем подтверждение клиенту перед закрытием соединения
-        conn.send("Server closing connection.".encode('utf-8'))
+    # Декодируем полученные байты в строку
+    msg += data.decode('utf-8')
+    # Проверяем, есть ли в накопленных данных полное сообщение
+    while '\n' in msg:
+        # Разделяем данные по символу новой строки '\n'
+        line, msg = msg.split('\n', 1)
+        print(f"Received from client: {line}")  # Выводим полное сообщение от клиента
+        if line.lower() == 'exit':
+            # Если клиент отправил команду 'exit', завершаем работу с клиентом
+            print("Exit command received. Closing connection.")
+            # Отправляем подтверждение клиенту перед закрытием соединения
+            conn.send("Server closing connection.\n".encode('utf-8'))
+            break
+        else:
+            # Обрабатываем полученное сообщение
+            # Для примера переведем строку в верхний регистр
+            response = line.upper()
+            # Отправляем ответ клиенту, добавляя символ '\n' в конце
+            conn.send((response + '\n').encode('utf-8'))
+            print("Response sent to client")  # Подтверждаем отправку ответа
+    if line.lower() == 'exit':
+        # Если была получена команда 'exit', выходим из внешнего цикла
         break
-    else:
-        # Здесь можно обработать полученное сообщение от клиента
-        # Для примера переводим строку в верхний регистр
-        response = decoded_data.upper()
-        # Отправляем ответ клиенту. Метод send() принимает данные в байтах, поэтому кодируем строку
-        conn.send(response.encode('utf-8'))
-        print("Response sent to client")  # Подтверждаем отправку ответа
 
 # После выхода из цикла закрываем соединение с клиентом
 conn.close()
